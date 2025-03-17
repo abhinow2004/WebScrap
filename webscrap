@@ -1,0 +1,64 @@
+import requests
+from bs4 import BeautifulSoup
+
+# URL of the CoinMarketCap website
+url = 'https://coinmarketcap.com/'
+
+# Send a GET request to the website
+response = requests.get(url)
+response.raise_for_status()  # Check for request errors
+
+# Parse the webpage content with BeautifulSoup
+soup = BeautifulSoup(response.text, 'html.parser')
+
+# Locate the table containing the cryptocurrencies
+table = soup.find('table')
+
+# Check if the table is found
+if not table:
+    print("Table not found. Please check the class name or website structure.")
+else:
+    # Extract the rows from the table
+    rows = table.find('tbody').find_all('tr')
+
+    # Initialize a list to store the cryptocurrency data
+    crypto_data = []
+
+    # Iterate over each row and extract relevant data
+    for row in rows:
+        try:
+            # Extracting the name and symbol
+            columns = row.find_all('td')
+            if len(columns) < 7:
+                continue  # Skip if there are not enough columns
+
+            # Name and symbol are typically in the first or second column
+            name_symbol = columns[2].find_all('p')
+            name = name_symbol[0].text.strip() if len(name_symbol) > 0 else ''
+            symbol = name_symbol[1].text.strip() if len(name_symbol) > 1 else ''
+
+            # Market cap and price are in specific columns
+            market_cap = columns[6].text.strip()
+            price = columns[3].text.strip()
+
+            # Append the data to the list
+            crypto_data.append({
+                'name': name,
+                'symbol': symbol,
+                'market_cap': market_cap,
+                'price': price
+            })
+        except Exception as e:
+            # Print exception details for debugging
+            print(f"Error processing row: {e}")
+            continue
+
+    # Check if any data was collected
+    if not crypto_data:
+        print("No cryptocurrency data found. Please check the selectors.")
+    else:
+        # Print the extracted data
+        for crypto in crypto_data:
+            print(f"Name: {crypto['name']}, Symbol: {crypto['symbol']}, Market Cap: {crypto['market_cap']}, Price: {crypto['price']}")
+
+
